@@ -1,17 +1,28 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { QuoteEngine } from "@/features/quote/QuoteEngine"
 import { ContractScanner } from "@/features/contract/ContractScanner"
 import { CashFlowRadar } from "@/features/cashflow/CashFlowRadar"
 import { SiteProof } from "@/features/site/SiteProof"
+import { ProtectedRoute } from "@/features/auth/ProtectedRoute"
+import { AuthLayout } from "@/features/auth/AuthLayout"
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/features/auth/AuthProvider"
 
-function App() {
+function AppContent() {
+  const { signOut } = useAuth();
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-2xl font-bold text-primary">BuildShield AI</h1>
-          <p className="text-muted-foreground">Your construction survival engine</p>
+        <header className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-primary">BuildShield AI</h1>
+            <p className="text-muted-foreground">Your construction survival engine</p>
+          </div>
+          <Button variant="outline" onClick={signOut}>Sign Out</Button>
         </header>
 
         <Tabs defaultValue="quote" className="space-y-4">
@@ -68,6 +79,18 @@ function App() {
         </Tabs>
       </div>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AuthLayout>
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+      </AuthLayout>
+    </AuthProvider>
   )
 }
 

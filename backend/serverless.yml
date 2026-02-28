@@ -51,9 +51,274 @@ functions:
       - http:
           path: /{proxy+}
           method: ANY
+          authorizer:
+            name: userAuthorizer
+            type: COGNITO_USER_POOLS
+            arn: arn:aws:cognito-idp:${self:provider.region}:*:userpool/${self:custom.cognitoUserPoolId}
+            claims:
+              - email
+              - sub
+              - name
+              - cognito:groups
       - http:
           path: /
           method: ANY
+          authorizer:
+            name: userAuthorizer
+            type: COGNITO_USER_POOLS
+            arn: arn:aws:cognito-idp:${self:provider.region}:*:userpool/${self:custom.cognitoUserPoolId}
+            claims:
+              - email
+              - sub
+              - name
+              - cognito:groups
+  
+  refreshToken:
+    handler: src/handlers/auth.refreshToken
+    events:
+      - http:
+          path: /auth/refresh
+          method: POST
+  
+  signUp:
+    handler: src/handlers/auth.signUp
+    events:
+      - http:
+          path: /auth/signup
+          method: POST
+  
+  confirmSignUp:
+    handler: src/handlers/auth.confirmSignUp
+    events:
+      - http:
+          path: /auth/confirm-signup
+          method: POST
+  
+  signIn:
+    handler: src/handlers/auth.signIn
+    events:
+      - http:
+          path: /auth/signin
+          method: POST
+  
+  forgotPassword:
+    handler: src/handlers/auth.forgotPassword
+    events:
+      - http:
+          path: /auth/forgot-password
+          method: POST
+  
+  confirmForgotPassword:
+    handler: src/handlers/auth.confirmForgotPassword
+    events:
+      - http:
+          path: /auth/confirm-forgot-password
+          method: POST
+  
+  getUser:
+    handler: src/handlers/auth.getUser
+    events:
+      - http:
+          path: /auth/user
+          method: GET
+          authorizer:
+            name: userAuthorizer
+            type: COGNITO_USER_POOLS
+            arn: arn:aws:cognito-idp:${self:provider.region}:*:userpool/${self:custom.cognitoUserPoolId}
+            claims:
+              - email
+              - sub
+              - name
+  
+  updateUserAttributes:
+    handler: src/handlers/auth.updateUserAttributes
+    events:
+      - http:
+          path: /auth/user/attributes
+          method: PUT
+          authorizer:
+            name: userAuthorizer
+            type: COGNITO_USER_POOLS
+            arn: arn:aws:cognito-idp:${self:provider.region}:*:userpool/${self:custom.cognitoUserPoolId}
+            claims:
+              - email
+              - sub
+              - name
+  
+  changePassword:
+    handler: src/handlers/auth.changePassword
+    events:
+      - http:
+          path: /auth/user/password
+          method: POST
+          authorizer:
+            name: userAuthorizer
+            type: COGNITO_USER_POOLS
+            arn: arn:aws:cognito-idp:${self:provider.region}:*:userpool/${self:custom.cognitoUserPoolId}
+            claims:
+              - email
+              - sub
+              - name
+  
+  verifyUserAttribute:
+    handler: src/handlers/auth.verifyUserAttribute
+    events:
+      - http:
+          path: /auth/user/verify
+          method: POST
+          authorizer:
+            name: userAuthorizer
+            type: COGNITO_USER_POOLS
+            arn: arn:aws:cognito-idp:${self:provider.region}:*:userpool/${self:custom.cognitoUserPoolId}
+            claims:
+              - email
+              - sub
+              - name
+  
+  resendConfirmationCode:
+    handler: src/handlers/auth.resendConfirmationCode
+    events:
+      - http:
+          path: /auth/resend-code
+          method: POST
+  
+  refreshToken:
+    handler: src/handlers/auth.refreshToken
+    events:
+      - http:
+          path: /auth/refresh
+          method: POST
+
+resources:
+  Resources:
+    DataTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+          - AttributeName: GSI1PK
+            AttributeType: S
+          - AttributeName: GSI1SK
+            AttributeType: S
+          - AttributeName: GSI2PK
+            AttributeType: S
+          - AttributeName: GSI2SK
+            AttributeType: S
+        GlobalSecondaryIndexes:
+          - IndexName: GSI1
+            KeySchema:
+              - AttributeName: GSI1PK
+                KeyType: HASH
+              - AttributeName: GSI1SK
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+          - IndexName: GSI2
+            KeySchema:
+              - AttributeName: GSI2PK
+                KeyType: HASH
+              - AttributeName: GSI2SK
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+    AssetsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-${self:provider.environment.STAGE}-assets
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:service}-${self:provider.environment.STAGE}-user-pool
+        AutoVerifiedAttributes:
+          - email
+        UsernameAttributes:
+          - email
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: true
+            RequireUppercase: true
+        Schema:
+          - AttributeDataType: String
+            Name: email
+            Required: true
+          - AttributeDataType: String
+            Name: name
+            Required: true
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:service}-${self:provider.environment.STAGE}-user-pool-client
+        UserPoolId: !Ref CognitoUserPool
+        GenerateSecret: false
+        ExplicitAuthFlows:
+          - ALLOW_USER_PASSWORD_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+        PreventUserExistenceErrors: ENABLED
+        SupportedIdentityProviders:
+          - COGNITO
+        CallbackURLs:
+          - ${self:custom.callbackUrls.${self:provider.environment.STAGE}}
+        LogoutURLs:
+          - ${self:custom.logoutUrls.${self:provider.environment.STAGE}}
+        AllowedOAuthFlows:
+          - code
+        AllowedOAuthScopes:
+          - phone
+          - email
+          - profile
+          - openid
+          - aws.cognito.signin.user.admin
+        AllowedOAuthFlowsUserPoolClient: true
+    CognitoIdentityPool:
+      Type: AWS::Cognito::IdentityPool
+      Properties:
+        IdentityPoolName: ${self:service}-${self:provider.environment.STAGE}-identity-pool
+        AllowUnauthenticatedIdentities: false
+        CognitoIdentityProviders:
+          - ClientId: !Ref CognitoUserPoolClient
+            ProviderName: !GetAtt CognitoUserPool.ProviderName
+            ServerSideTokenCheck: true
+
+custom:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude: ['aws-sdk']
+    target: 'node20'
+    platform: 'node'
+    concurrency: 10
+  cognitoUserPoolId: !Ref CognitoUserPool
+  callbackUrls:
+    dev: http://localhost:3000/auth/callback
+    prod: https://app.buildshield.ai/auth/callback
+  logoutUrls:
+    dev: http://localhost:3000/auth/login
+    prod: https://app.buildshield.ai/auth/login
 
 resources:
   Resources:

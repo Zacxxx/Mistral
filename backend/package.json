@@ -13,6 +13,7 @@
     "@aws-lambda-powertools/logger": "^2.31.0",
     "@aws-lambda-powertools/metrics": "^2.31.0",
     "@aws-lambda-powertools/tracer": "^2.31.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.1000.0",
     "@aws-sdk/client-dynamodb": "^3.1000.0",
     "@aws-sdk/client-s3": "^3.1000.0",
     "@aws-sdk/client-ses": "^3.1000.0",
@@ -21,10 +22,18 @@
     "@middy/core": "^6.4.5",
     "@middy/http-error-handler": "^6.4.5",
     "@middy/http-json-body-parser": "^6.4.5",
+    "@middy/http-router": "^6.4.5",
     "@middy/validator": "^6.4.5",
     "aws-lambda": "^1.0.7",
     "serverless": "^3.39.0",
     "serverless-esbuild": "^1.57.0",
-    "serverless-offline": "^14.5.0"
+    "serverless-offline": "^14.5.0",
+    "uuid": "^13.0.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.161",
+    "aws-sdk-client-mock": "^4.1.0",
+    "vitest": "^4.0.18"
   }
 }
