@@ -18,27 +18,27 @@ describe('Auth Features', () => {
     render(<Login />);
     const submitButton = screen.getByText('Sign In');
     await user.click(submitButton);
-    expect(screen.getByText('Email is required')).toBeInTheDocument();
+    expect(await screen.findByText('Email is required')).toBeInTheDocument();
   });
 
   it('renders signup form', () => {
     render(<Signup />);
     expect(screen.getByText('Create your account')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Name')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Your name')).toBeInTheDocument();
   });
 
-  it('handles authentication state', () => {
+  it('handles authentication state', async () => {
     const TestComponent = () => {
       const { user, isAuthenticated } = useAuth();
       return <div>{isAuthenticated ? 'Authenticated' : 'Not Authenticated'}</div>;
     };
-    
+
     render(
       <AuthProvider>
         <TestComponent />
       </AuthProvider>
     );
-    
-    expect(screen.getByText('Not Authenticated')).toBeInTheDocument();
+
+    expect(await screen.findByText('Not Authenticated')).toBeInTheDocument();
   });
 });

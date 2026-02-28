@@ -14,11 +14,21 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { signIn, isLoading } = useAuth();
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!email) {
+      setError('Email is required');
+      return;
+    }
+
+    if (!password) {
+      setError('Password is required');
+      return;
+    }
+
     try {
       await signIn(email, password);
     } catch (err) {
@@ -42,8 +52,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                required
+                placeholder="Email"
               />
             </div>
             <div className="space-y-2">
@@ -53,8 +62,7 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
+                placeholder="Password"
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>

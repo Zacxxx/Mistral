@@ -1,6 +1,7 @@
 "use client"
 
-import * as nlp from "compromise"
+import nlp_ from "compromise"
+const nlp: any = (nlp_ as any).default || nlp_
 
 // Clause risk weights (0-1 scale)
 const CLAUSE_RISK_WEIGHTS = {
@@ -118,8 +119,8 @@ export function analyzeContract(text: string): ContractAnalysis {
     patterns.forEach(pattern => {
       const matches = doc.match(pattern).out('array')
       if (matches.length > 0) {
-        matches.forEach(match => {
-          const sentence = sentences.find(s => s.includes(match))
+        matches.forEach((match: string) => {
+          const sentence = sentences.find((s: string) => s.includes(match))
           if (sentence) {
             const startIndex = text.indexOf(sentence)
             const endIndex = startIndex + sentence.length
@@ -175,13 +176,13 @@ function calculateClauseRisk(clauseType: string, text: string): number {
 
   // Check for high-risk modifiers
   const highRiskModifiers = [
-    "excessive", "unreasonable", "disproportionate", "harsh", "severe", 
+    "excessive", "unreasonable", "disproportionate", "harsh", "severe",
     "punitive", "onerous", "burdensome", "unfair", "one-sided"
   ]
 
   // Check for low-risk modifiers
   const lowRiskModifiers = [
-    "reasonable", "fair", "mutual", "balanced", "standard", 
+    "reasonable", "fair", "mutual", "balanced", "standard",
     "industry norm", "customary", "equitable"
   ]
 
@@ -204,10 +205,9 @@ function calculateClauseRisk(clauseType: string, text: string): number {
 
 function generateClauseAnalysis(
   clauseType: string,
-  text: string,
+  _text: string,
   riskScore: number
 ): { explanation: string; suggestions: string[] } {
-  const doc = nlp(text)
   const suggestions: string[] = []
   let explanation = ""
 
@@ -442,13 +442,13 @@ export function convertToPlainLanguage(text: string): string {
 
   let plainText = text
   Object.entries(replacements).forEach(([legalTerm, plainTerm]) => {
-    const regex = new RegExp(`\b${legalTerm}\b`, 'gi')
+    const regex = new RegExp(`\\b${legalTerm}\\b`, 'gi')
     plainText = plainText.replace(regex, plainTerm)
   })
 
   // Simplify complex sentences
   const sentences = doc.sentences().out('array')
-  plainText = sentences.map(sentence => {
+  plainText = sentences.map((sentence: string) => {
     const sentenceDoc = nlp(sentence)
     if (sentence.length > 100) {
       return sentenceDoc.sentences().toSimple().out()

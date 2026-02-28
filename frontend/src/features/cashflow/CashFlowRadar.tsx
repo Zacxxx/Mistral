@@ -8,6 +8,7 @@ import { DollarSign, AlertTriangle, TrendingUp, TrendingDown, Calendar, Minus } 
 import { useState, useMemo } from "react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { calculateCashFlowProjection, calculateBurnRate, calculateLiquidityRunway, generateScenario, getUpcomingPayments } from "@/lib/finance-utils"
+import { format } from "date-fns"
 
 interface Invoice {
   id: string;
@@ -164,11 +165,11 @@ export function CashFlowRadar() {
                   <TableRow key={invoice.id}>
                     <TableCell>{invoice.id}</TableCell>
                     <TableCell>${invoice.amount}</TableCell>
-                    <TableCell>{invoice.dueDate}</TableCell>
+                    <TableCell>{invoice.dueDate.toLocaleDateString()}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs ${invoice.status === "paid" ? "bg-success text-success-foreground" :
-                          invoice.status === "pending" ? "bg-warning text-warning-foreground" :
-                            "bg-destructive text-destructive-foreground"
+                        invoice.status === "pending" ? "bg-warning text-warning-foreground" :
+                          "bg-destructive text-destructive-foreground"
                         }`}>
                         {invoice.status}
                       </span>
@@ -199,11 +200,11 @@ export function CashFlowRadar() {
                   <TableRow key={expense.id}>
                     <TableCell>{expense.id}</TableCell>
                     <TableCell>${expense.amount}</TableCell>
-                    <TableCell>{expense.dueDate}</TableCell>
+                    <TableCell>{expense.dueDate.toLocaleDateString()}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs ${expense.status === "paid" ? "bg-success text-success-foreground" :
-                          expense.status === "pending" ? "bg-warning text-warning-foreground" :
-                            "bg-destructive text-destructive-foreground"
+                        expense.status === "pending" ? "bg-warning text-warning-foreground" :
+                          "bg-destructive text-destructive-foreground"
                         }`}>
                         {expense.status}
                       </span>
@@ -216,86 +217,86 @@ export function CashFlowRadar() {
         </Card>
       </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-         <Card>
-           <CardHeader>
-             <CardTitle>Cash Flow Projection</CardTitle>
-           </CardHeader>
-           <CardContent>
-             <div className="h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
-                 <LineChart data={projections}>
-                   <CartesianGrid strokeDasharray="3 3" />
-                   <XAxis
-                     dataKey="date"
-                     tickFormatter={(date) => format(date, 'MMM dd')}
-                     tick={{ fontSize: 12 }}
-                   />
-                   <YAxis tick={{ fontSize: 12 }} />
-                   <Tooltip
-                     labelFormatter={(label) => format(label, 'MMMM dd, yyyy')}
-                     formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
-                   />
-                   <Line
-                     type="monotone"
-                     dataKey="balance"
-                     stroke="#22c55e"
-                     strokeWidth={2}
-                     dot={false}
-                   />
-                 </LineChart>
-               </ResponsiveContainer>
-             </div>
-           </CardContent>
-         </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Cash Flow Projection</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={projections}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(date) => format(date, 'MMM dd')}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip
+                    labelFormatter={(label) => format(label, 'MMMM dd, yyyy')}
+                    formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="balance"
+                    stroke="#22c55e"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
-         <Card>
-           <CardHeader>
-             <CardTitle>Upcoming Payments</CardTitle>
-           </CardHeader>
-           <CardContent>
-             <Table>
-               <TableHeader>
-                 <TableRow>
-                   <TableHead>Description</TableHead>
-                   <TableHead>Amount</TableHead>
-                   <TableHead>Due Date</TableHead>
-                   <TableHead>Type</TableHead>
-                 </TableRow>
-               </TableHeader>
-               <TableBody>
-                 {upcomingPayments.map((payment, index) => (
-                   <TableRow key={index}>
-                     <TableCell>{'id' in payment ? payment.id : payment.id}</TableCell>
-                     <TableCell>${payment.amount}</TableCell>
-                     <TableCell>{format(payment.dueDate, 'MMM dd, yyyy')}</TableCell>
-                     <TableCell>
-                       <span className={`px-2 py-1 rounded-full text-xs ${'paymentTermsDays' in payment ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'}`}>
-                         {'paymentTermsDays' in payment ? 'Invoice' : 'Expense'}
-                       </span>
-                     </TableCell>
-                   </TableRow>
-                 ))}
-               </TableBody>
-             </Table>
-           </CardContent>
-         </Card>
-       </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Payments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Type</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {upcomingPayments.map((payment, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{'id' in payment ? payment.id : payment.id}</TableCell>
+                    <TableCell>${payment.amount}</TableCell>
+                    <TableCell>{format(payment.dueDate, 'MMM dd, yyyy')}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs ${'paymentTermsDays' in payment ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'}`}>
+                        {'paymentTermsDays' in payment ? 'Invoice' : 'Expense'}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-         <Button onClick={handleUpdateCashFlow} className="w-full">
-           <DollarSign className="mr-2 h-4 w-4" /> Update Cash Flow Projections
-         </Button>
-         <Button onClick={handleCreateScenario} variant="outline" className="w-full">
-           <Calendar className="mr-2 h-4 w-4" /> Create Scenario
-         </Button>
-       </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Button onClick={handleUpdateCashFlow} className="w-full">
+          <DollarSign className="mr-2 h-4 w-4" /> Update Cash Flow Projections
+        </Button>
+        <Button onClick={handleCreateScenario} variant="outline" className="w-full">
+          <Calendar className="mr-2 h-4 w-4" /> Create Scenario
+        </Button>
+      </div>
 
-       {activeScenario && (
-         <Button onClick={handleResetScenario} variant="destructive" className="w-full">
-           <Minus className="mr-2 h-4 w-4" /> Reset Scenario
-         </Button>
-       )}
+      {activeScenario && (
+        <Button onClick={handleResetScenario} variant="destructive" className="w-full">
+          <Minus className="mr-2 h-4 w-4" /> Reset Scenario
+        </Button>
+      )}
     </div>
   )
 }

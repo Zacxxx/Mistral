@@ -17,102 +17,115 @@ const tracer = new Tracer();
 
 const routes = [
   {
-    method: 'POST',
+    method: 'GET' as any,
+    path: '/',
+    handler: async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => ({
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: 'BuildShield AI API',
+        path: event.path,
+        method: event.httpMethod,
+      }),
+    }),
+  },
+  {
+    method: 'POST' as any,
     path: '/quotes',
     handler: dataHandlers.createQuote,
   },
   {
-    method: 'GET',
+    method: 'GET' as any,
     path: '/quotes/{quoteId}',
     handler: dataHandlers.getQuote,
   },
   {
-    method: 'PUT',
+    method: 'PUT' as any,
     path: '/quotes/{quoteId}',
     handler: dataHandlers.updateQuote,
   },
   {
-    method: 'DELETE',
+    method: 'DELETE' as any,
     path: '/quotes/{quoteId}',
     handler: dataHandlers.deleteQuote,
   },
   {
-    method: 'GET',
+    method: 'GET' as any,
     path: '/quotes',
     handler: dataHandlers.listQuotes,
   },
   {
-    method: 'POST',
+    method: 'POST' as any,
     path: '/contracts',
     handler: dataHandlers.createContract,
   },
   {
-    method: 'GET',
+    method: 'GET' as any,
     path: '/contracts/{contractId}',
     handler: dataHandlers.getContract,
   },
   {
-    method: 'PUT',
+    method: 'PUT' as any,
     path: '/contracts/{contractId}',
     handler: dataHandlers.updateContract,
   },
   {
-    method: 'DELETE',
+    method: 'DELETE' as any,
     path: '/contracts/{contractId}',
     handler: dataHandlers.deleteContract,
   },
   {
-    method: 'GET',
+    method: 'GET' as any,
     path: '/contracts',
     handler: dataHandlers.listContracts,
   },
   {
-    method: 'POST',
+    method: 'POST' as any,
     path: '/photos',
     handler: dataHandlers.createPhoto,
   },
   {
-    method: 'GET',
+    method: 'GET' as any,
     path: '/photos/{photoId}',
     handler: dataHandlers.getPhoto,
   },
   {
-    method: 'PUT',
+    method: 'PUT' as any,
     path: '/photos/{photoId}',
     handler: dataHandlers.updatePhoto,
   },
   {
-    method: 'DELETE',
+    method: 'DELETE' as any,
     path: '/photos/{photoId}',
     handler: dataHandlers.deletePhoto,
   },
   {
-    method: 'GET',
+    method: 'GET' as any,
     path: '/photos',
     handler: dataHandlers.listPhotos,
   },
   {
-    method: 'POST',
+    method: 'POST' as any,
     path: '/cash-flows',
     handler: dataHandlers.createCashFlow,
   },
   {
-    method: 'GET',
+    method: 'GET' as any,
     path: '/cash-flows/{cashFlowId}',
     handler: dataHandlers.getCashFlow,
   },
   {
-    method: 'PUT',
+    method: 'PUT' as any,
     path: '/cash-flows/{cashFlowId}',
     handler: dataHandlers.updateCashFlow,
   },
   {
-    method: 'DELETE',
+    method: 'DELETE' as any,
     path: '/cash-flows/{cashFlowId}',
     handler: dataHandlers.deleteCashFlow,
   },
   {
-    method: 'GET',
+    method: 'GET' as any,
     path: '/cash-flows',
     handler: dataHandlers.listCashFlows,
   },
@@ -123,5 +136,5 @@ export const handler = middy()
   .use(injectLambdaContext(logger, { logEvent: true }))
   .use(captureLambdaHandler(tracer))
   .use(logMetrics(metrics, { captureColdStartMetric: true }))
-  .use(httpRouterHandler(routes))
-  .use(httpErrorHandler());
+  .use(httpErrorHandler())
+  .handler(httpRouterHandler(routes) as any);

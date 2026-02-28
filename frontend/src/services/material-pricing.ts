@@ -1,6 +1,6 @@
 "use strict";
 
-import { CostItem } from "@/types/quote";
+import type { CostItem } from "@/types/quote";
 
 // Mock data for regional material prices
 const MOCK_MATERIAL_PRICES = {
@@ -82,10 +82,10 @@ export const fetchMaterialPrices = async (region: string): Promise<Record<string
 
   // Use mock data if no API available
   const prices = MOCK_MATERIAL_PRICES[region as keyof typeof MOCK_MATERIAL_PRICES] || MOCK_MATERIAL_PRICES["us-east"];
-  
+
   // Cache the prices
   priceCache.set(region, prices);
-  
+
   return prices;
 };
 
@@ -103,7 +103,7 @@ export const compareMaterialPrices = (
   return materials.map(material => {
     const regionalPrice = regionalPrices[material.name] || material.unitPrice;
     const difference = ((regionalPrice - material.unitPrice) / material.unitPrice) * 100;
-    
+
     return {
       name: material.name,
       currentPrice: material.unitPrice,
@@ -120,7 +120,7 @@ export const getRegionalPreferences = (): { region: string } => {
 };
 
 // Set regional preferences
-export const setRegionalPreferences = (preferences: { region: string }): void => {
+export const setRegionalPreferences = async (preferences: { region: string }): Promise<void> => {
   regionalPreferences = {
     ...preferences,
     lastUpdated: new Date().toISOString()

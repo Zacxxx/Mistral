@@ -23,3 +23,27 @@ export interface QuoteAnalysis {
   detectedItems: CostItem[];
   suggestedItems: SuggestedItem[];
 }
+
+export interface SimulationResult {
+  baseCost: number;
+  totalCost: number;
+  revenue: number;
+  margin: number;
+  marginPercentage: number;
+  risks: string[];
+  sensitivity: Record<string, { low: number; high: number }>;
+}
+
+export interface Material {
+  name: string;
+  category: CostCategory;
+  basePrice: number;
+}
+
+export interface Scenario {
+  name: string;
+  materialsCostFactor: number;
+  laborCostFactor: number;
+  overheadFactor: number;
+  externalRiskFactor: number;
+}

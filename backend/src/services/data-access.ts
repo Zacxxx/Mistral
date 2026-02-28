@@ -1,6 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, DeleteCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 import { Quote, Contract, Photo, CashFlow, DynamoDBItem, EntityType } from '../models/types';
 import { QuoteSchema, ContractSchema, PhotoSchema, CashFlowSchema } from '../models/schemas';
 import { DataAccessError, ValidationError, NotFoundError, ConflictError, handleDynamoDBError } from '../utils/errors';
@@ -9,7 +10,7 @@ import { retry } from '../utils/retry';
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-const TABLE_NAME = process.env.DYNAMODB_TABLE!;
+const TABLE_NAME = (typeof process !== 'undefined' ? process.env.DYNAMODB_TABLE : 'test-table')!;
 
 const getEntityKeys = (entityType: EntityType, entityId: string, projectId?: string): { PK: string; SK: string } => {
   switch (entityType) {
@@ -28,7 +29,7 @@ const getEntityKeys = (entityType: EntityType, entityId: string, projectId?: str
 
 const getGSIKeys = (entityType: EntityType, entity: any): Record<string, string> => {
   const keys: Record<string, string> = {};
-  
+
   switch (entityType) {
     case 'quote':
       keys.GSI1PK = `CONTRACTOR#${entity.contractorId}`;
@@ -49,7 +50,7 @@ const getGSIKeys = (entityType: EntityType, entity: any): Record<string, string>
       keys.GSI1SK = `CASHFLOW#${entity.id}`;
       break;
   }
-  
+
   return keys;
 };
 
@@ -69,33 +70,33 @@ const validateEntity = (entityType: EntityType, data: any) => {
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ValidationError('Validation failed', error.errors);
+      throw new ValidationError('Validation failed', (error as any).errors || (error as any).issues);
     }
     throw error;
   }
 };
 
 export const createEntity = async <T>(entityType: EntityType, entity: T & { projectId: string }): Promise<T> => {
-  const validatedEntity = validateEntity(entityType, entity) as T & { id: string; projectId: string; createdAt: string; updatedAt: string };
-  
+  const validatedEntity = validateEntity(entityType, entity) as any;
+
   if (!validatedEntity.id) {
     validatedEntity.id = uuidv4();
   }
-  
+
   const now = new Date().toISOString();
   validatedEntity.createdAt = validatedEntity.createdAt || now;
   validatedEntity.updatedAt = validatedEntity.updatedAt || now;
-  
+
   const keys = getEntityKeys(entityType, validatedEntity.id, validatedEntity.projectId);
   const gsiKeys = getGSIKeys(entityType, validatedEntity);
-  
+
   const item: DynamoDBItem = {
     ...keys,
     ...gsiKeys,
     entityType,
     ...validatedEntity,
   };
-  
+
   try {
     await retry(async () => {
       await docClient.send(
@@ -106,7 +107,7 @@ export const createEntity = async <T>(entityType: EntityType, entity: T & { proj
         })
       );
     });
-    
+
     return validatedEntity;
   } catch (error) {
     throw handleDynamoDBError(error);
@@ -115,7 +116,7 @@ export const createEntity = async <T>(entityType: EntityType, entity: T & { proj
 
 export const getEntity = async <T>(entityType: EntityType, entityId: string, projectId: string): Promise<T> => {
   const keys = getEntityKeys(entityType, entityId, projectId);
-  
+
   try {
     const result = await retry(async () => {
       return await docClient.send(
@@ -125,11 +126,11 @@ export const getEntity = async <T>(entityType: EntityType, entityId: string, pro
         })
       );
     });
-    
+
     if (!result.Item) {
       throw new NotFoundError(`${entityType} not found`);
     }
-    
+
     return result.Item as T;
   } catch (error) {
     throw handleDynamoDBError(error);
@@ -138,12 +139,12 @@ export const getEntity = async <T>(entityType: EntityType, entityId: string, pro
 
 export const updateEntity = async <T>(entityType: EntityType, entityId: string, projectId: string, updates: Partial<T>): Promise<T> => {
   const keys = getEntityKeys(entityType, entityId, projectId);
-  
+
   const now = new Date().toISOString();
   const updateExpressionParts = [];
   const expressionAttributeValues: Record<string, any> = {};
   const expressionAttributeNames: Record<string, string> = {};
-  
+
   for (const [key, value] of Object.entries(updates)) {
     if (key !== 'id' && key !== 'projectId' && key !== 'createdAt') {
       updateExpressionParts.push(`#${key} = :${key}`);
@@ -151,17 +152,17 @@ export const updateEntity = async <T>(entityType: EntityType, entityId: string, 
       expressionAttributeValues[`:${key}`] = value;
     }
   }
-  
+
   if (updateExpressionParts.length === 0) {
     throw new ValidationError('No valid fields to update');
   }
-  
+
   updateExpressionParts.push('#updatedAt = :updatedAt');
   expressionAttributeNames['#updatedAt'] = 'updatedAt';
   expressionAttributeValues[':updatedAt'] = now;
-  
+
   const updateExpression = `SET ${updateExpressionParts.join(', ')}`;
-  
+
   try {
     const result = await retry(async () => {
       return await docClient.send(
@@ -176,7 +177,7 @@ export const updateEntity = async <T>(entityType: EntityType, entityId: string, 
         })
       );
     });
-    
+
     return result.Attributes as T;
   } catch (error) {
     if (error instanceof DataAccessError && error.code === 'CONDITION_FAILED') {
@@ -188,7 +189,7 @@ export const updateEntity = async <T>(entityType: EntityType, entityId: string, 
 
 export const deleteEntity = async (entityType: EntityType, entityId: string, projectId: string): Promise<void> => {
   const keys = getEntityKeys(entityType, entityId, projectId);
-  
+
   try {
     await retry(async () => {
       await docClient.send(
@@ -228,7 +229,7 @@ export const queryEntities = async <T>(
         })
       );
     });
-    
+
     return {
       items: result.Items?.filter((item) => item.entityType === entityType) as T[] || [],
       lastEvaluatedKey: result.LastEvaluatedKey,
@@ -239,37 +240,78 @@ export const queryEntities = async <T>(
 };
 
 export const listQuotesByProject = async (projectId: string): Promise<Quote[]> => {
-  return queryEntities<Quote>('quote', null, 'PK = :pk', { ':pk': `PROJECT#${projectId}` });
+  const result = await queryEntities<Quote>('quote', null, 'PK = :pk', { ':pk': `PROJECT#${projectId}` });
+  return result.items;
 };
 
 export const listQuotesByContractor = async (contractorId: string): Promise<Quote[]> => {
-  return queryEntities<Quote>('quote', 'GSI1', 'GSI1PK = :pk', { ':pk': `CONTRACTOR#${contractorId}` });
+  const result = await queryEntities<Quote>('quote', 'GSI1', 'GSI1PK = :pk', { ':pk': `CONTRACTOR#${contractorId}` });
+  return result.items;
 };
 
 export const listContractsByProject = async (projectId: string): Promise<Contract[]> => {
-  return queryEntities<Contract>('contract', null, 'PK = :pk', { ':pk': `PROJECT#${projectId}` });
+  const result = await queryEntities<Contract>('contract', null, 'PK = :pk', { ':pk': `PROJECT#${projectId}` });
+  return result.items;
 };
 
 export const listContractsByContractor = async (contractorId: string): Promise<Contract[]> => {
-  return queryEntities<Contract>('contract', 'GSI1', 'GSI1PK = :pk', { ':pk': `CONTRACTOR#${contractorId}` });
+  const result = await queryEntities<Contract>('contract', 'GSI1', 'GSI1PK = :pk', { ':pk': `CONTRACTOR#${contractorId}` });
+  return result.items;
 };
 
 export const listContractsByCustomer = async (customerId: string): Promise<Contract[]> => {
-  return queryEntities<Contract>('contract', 'GSI2', 'GSI2PK = :pk', { ':pk': `CUSTOMER#${customerId}` });
+  const result = await queryEntities<Contract>('contract', 'GSI2', 'GSI2PK = :pk', { ':pk': `CUSTOMER#${customerId}` });
+  return result.items;
 };
 
 export const listPhotosByProject = async (projectId: string): Promise<Photo[]> => {
-  return queryEntities<Photo>('photo', null, 'PK = :pk', { ':pk': `PROJECT#${projectId}` });
+  const result = await queryEntities<Photo>('photo', null, 'PK = :pk', { ':pk': `PROJECT#${projectId}` });
+  return result.items;
 };
 
 export const listPhotosByContract = async (contractId: string): Promise<Photo[]> => {
-  return queryEntities<Photo>('photo', 'GSI1', 'GSI1PK = :pk', { ':pk': `CONTRACT#${contractId}` });
+  const result = await queryEntities<Photo>('photo', 'GSI1', 'GSI1PK = :pk', { ':pk': `CONTRACT#${contractId}` });
+  return result.items;
 };
 
 export const listCashFlowsByProject = async (projectId: string): Promise<CashFlow[]> => {
-  return queryEntities<CashFlow>('cashFlow', null, 'PK = :pk', { ':pk': `PROJECT#${projectId}` });
+  const result = await queryEntities<CashFlow>('cashFlow', null, 'PK = :pk', { ':pk': `PROJECT#${projectId}` });
+  return result.items;
 };
 
 export const listCashFlowsByContract = async (contractId: string): Promise<CashFlow[]> => {
-  return queryEntities<CashFlow>('cashFlow', 'GSI1', 'GSI1PK = :pk', { ':pk': `CONTRACT#${contractId}` });
+  const result = await queryEntities<CashFlow>('cashFlow', 'GSI1', 'GSI1PK = :pk', { ':pk': `CONTRACT#${contractId}` });
+  return result.items;
+};
+
+// Helper functions for tests and specific use cases
+export const createQuote = async (quote: any): Promise<boolean> => {
+  await createEntity('quote', quote);
+  return true;
+};
+
+export const getQuote = async (projectId: string, quoteId: string): Promise<Quote> => {
+  return getEntity<Quote>('quote', quoteId, projectId);
+};
+
+export const updateContract = async (projectId: string, contractId: string, updates: Partial<Contract>): Promise<Contract> => {
+  return updateEntity<Contract>('contract', contractId, projectId, updates);
+};
+
+export const deleteSiteProof = async (projectId: string, photoId: string): Promise<boolean> => {
+  await deleteEntity('photo', photoId, projectId);
+  return true;
+};
+
+export const queryCashFlow = async (projectId: string, month: string): Promise<CashFlow[]> => {
+  const result = await queryEntities<CashFlow>(
+    'cashFlow',
+    null,
+    'PK = :pk AND begins_with(SK, :sk)',
+    {
+      ':pk': `PROJECT#${projectId}`,
+      ':sk': `CASHFLOW#${month}`,
+    }
+  );
+  return result.items;
 };

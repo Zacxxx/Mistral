@@ -1,4 +1,4 @@
-import { FileWithPath } from "react-dropzone";
+import type { FileWithPath } from "react-dropzone";
 
 export const ACCEPTED_FILE_TYPES = {
   "application/pdf": [".pdf"],

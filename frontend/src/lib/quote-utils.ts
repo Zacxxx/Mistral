@@ -1,30 +1,8 @@
 "use client"
 
-import { CostItem, CostCategory, ProjectType, SuggestedItem } from "../types/quote";
+import type { CostItem, CostCategory, ProjectType, SuggestedItem, SimulationResult, Scenario } from "../types/quote";
 
-export type Material = {
-  name: string
-  quantity: number
-  unitPrice: number
-}
-
-export type SimulationResult = {
-  baseCost: number
-  totalCost: number
-  revenue: number
-  margin: number
-  marginPercentage: number
-  risks: string[]
-  sensitivity: Record<string, { low: number; high: number }>
-}
-
-export type Scenario = {
-  name: string
-  materialsCostFactor: number
-  laborCostFactor: number
-  overheadFactor: number
-  externalRiskFactor: number
-}
+// Material type unified with CostItem
 
 export const DEFAULT_SCENARIOS: Scenario[] = [
   { name: "Optimistic", materialsCostFactor: 0.9, laborCostFactor: 0.95, overheadFactor: 0.9, externalRiskFactor: 0.5 },
@@ -64,7 +42,7 @@ const CATEGORY_KEYWORDS: Record<CostCategory, string[]> = {
 /**
  * Analyzes quote description and identifies cost items
  */
-export const detectCostItems = (description: string, projectType: ProjectType): CostItem[] => {
+export const detectCostItems = (description: string, _projectType: ProjectType): CostItem[] => {
   const items: CostItem[] = [];
   const lowerDesc = description.toLowerCase();
 
@@ -144,7 +122,7 @@ export const formatCostItems = (items: CostItem[]): CostItem[] => {
  * Calculates margin and risk assessment for a quote
  */
 export function calculateMargin(
-  materials: Material[],
+  materials: CostItem[],
   laborCost: number,
   desiredMarginPercentage: number,
   projectDuration: number = 1,
@@ -195,19 +173,20 @@ function calculateSensitivity(baseCost: number, variable: number, change: number
  * Runs a scenario analysis for margin simulation
  */
 export function runScenario(
-  materials: Material[],
+  materials: CostItem[],
   laborCost: number,
   desiredMarginPercentage: number,
   scenario: Scenario,
   projectDuration: number = 1,
-  complexity: number = 1
+  complexity: number = 1,
+  externalFactors: number = 1
 ): SimulationResult {
   const adjustedMaterials = materials.map(m => ({
     ...m,
     unitPrice: m.unitPrice * scenario.materialsCostFactor
   }))
   const adjustedLaborCost = laborCost * scenario.laborCostFactor
-  const adjustedExternalFactors = scenario.externalRiskFactor
+  const adjustedExternalFactors = externalFactors * scenario.externalRiskFactor
 
   return calculateMargin(
     adjustedMaterials,
