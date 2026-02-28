@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { useDropzone, FileWithPath } from "react-dropzone"
+import { useDropzone } from "react-dropzone"
+import type { FileWithPath } from "react-dropzone"
 import { extractTextFromFile, validateFile, getFilePreview, ACCEPTED_FILE_TYPES, MAX_FILE_SIZE } from "@/utils/fileUtils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +12,7 @@ import { Upload, Scan, FileText, AlertTriangle, X, BarChart2, Lightbulb } from "
 import { toast } from "sonner"
 import { Progress } from "@/components/ui/progress"
 import { analyzeContract, getRiskDistributionData, convertToPlainLanguage } from "@/lib/contract-utils"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 export function ContractScanner() {
   const [contractText, setContractText] = useState("")
@@ -26,7 +27,7 @@ export function ContractScanner() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [activeTab, setActiveTab] = useState<"analysis" | "plainLanguage" | "visualization">("analysis")
   const [plainLanguageText, setPlainLanguageText] = useState("")
-  const [riskDistribution, setRiskDistribution] = useState<{type: string; count: number; avgRisk: number}[]>([])
+  const [riskDistribution, setRiskDistribution] = useState<{ type: string; count: number; avgRisk: number }[]>([])
 
   interface ClauseAnalysis {
     type: string
@@ -110,7 +111,7 @@ export function ContractScanner() {
     setPenaltyClauses(analysis.penaltyClauses)
     setPlainLanguageText(convertToPlainLanguage(contractText))
     setRiskDistribution(getRiskDistributionData(analysis.clauses))
-    
+
     toast.success("Contract scanned", {
       description: analysis.summary,
     })
@@ -229,164 +230,164 @@ export function ContractScanner() {
           </CardContent>
         </Card>
 
-         <div className="space-y-6">
-           {riskScore !== null && (
-             <Card>
-               <CardHeader>
-                 <CardTitle>Contract Analysis</CardTitle>
-                 <div className="flex space-x-2">
-                   <Button
-                     variant={activeTab === "analysis" ? "default" : "outline"}
-                     size="sm"
-                     onClick={() => setActiveTab("analysis")}
-                   >
-                     <AlertTriangle className="mr-2 h-4 w-4" /> Analysis
-                   </Button>
-                   <Button
-                     variant={activeTab === "plainLanguage" ? "default" : "outline"}
-                     size="sm"
-                     onClick={() => setActiveTab("plainLanguage")}
-                   >
-                     <Lightbulb className="mr-2 h-4 w-4" /> Plain Language
-                   </Button>
-                   <Button
-                     variant={activeTab === "visualization" ? "default" : "outline"}
-                     size="sm"
-                     onClick={() => setActiveTab("visualization")}
-                   >
-                     <BarChart2 className="mr-2 h-4 w-4" /> Visualization
-                   </Button>
-                 </div>
-               </CardHeader>
-               <CardContent>
-                 {activeTab === "analysis" && (
-                   <div className="space-y-6">
-                     <div className="flex justify-between items-center">
-                       <span className="text-sm font-medium">Risk Score</span>
-                       <span className={`text-2xl font-bold ${getRiskColor(riskScore)}`}>
-                         {riskScore}/100 ({riskLevel} Risk)
-                       </span>
-                     </div>
+        <div className="space-y-6">
+          {riskScore !== null && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Contract Analysis</CardTitle>
+                <div className="flex space-x-2">
+                  <Button
+                    variant={activeTab === "analysis" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveTab("analysis")}
+                  >
+                    <AlertTriangle className="mr-2 h-4 w-4" /> Analysis
+                  </Button>
+                  <Button
+                    variant={activeTab === "plainLanguage" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveTab("plainLanguage")}
+                  >
+                    <Lightbulb className="mr-2 h-4 w-4" /> Plain Language
+                  </Button>
+                  <Button
+                    variant={activeTab === "visualization" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveTab("visualization")}
+                  >
+                    <BarChart2 className="mr-2 h-4 w-4" /> Visualization
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {activeTab === "analysis" && (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Risk Score</span>
+                      <span className={`text-2xl font-bold ${getRiskColor(riskScore)}`}>
+                        {riskScore}/100 ({riskLevel} Risk)
+                      </span>
+                    </div>
 
-                     <div className="space-y-4">
-                       <h4 className="font-medium flex items-center">
-                         <AlertTriangle className="mr-2 h-4 w-4" /> Risk Details
-                       </h4>
-                       <div className="space-y-4">
-                         {riskDetails.map((clause, index) => (
-                           <div key={index} className="border rounded-lg p-4">
-                             <div className="flex justify-between items-start mb-2">
-                               <h5 className="font-medium capitalize">{clause.type} Clause</h5>
-                               <span className={`text-sm font-medium ${getRiskColor(clause.riskScore)}`}>
-                                 {clause.riskScore}/100
-                               </span>
-                             </div>
-                             <p className="text-sm mb-3">{clause.text}</p>
-                             <div className="space-y-2">
-                               <h6 className="text-xs font-medium text-muted-foreground">Explanation</h6>
-                               <p className="text-sm">{clause.explanation}</p>
-                               <h6 className="text-xs font-medium text-muted-foreground mt-2">Suggestions</h6>
-                               <ul className="space-y-1 text-sm">
-                                 {clause.suggestions.map((suggestion, i) => (
-                                   <li key={i} className="flex">
-                                     <span className="mr-2">•</span>
-                                     <span>{suggestion}</span>
-                                   </li>
-                                 ))}
-                               </ul>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
+                    <div className="space-y-4">
+                      <h4 className="font-medium flex items-center">
+                        <AlertTriangle className="mr-2 h-4 w-4" /> Risk Details
+                      </h4>
+                      <div className="space-y-4">
+                        {riskDetails.map((clause, index) => (
+                          <div key={index} className="border rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <h5 className="font-medium capitalize">{clause.type} Clause</h5>
+                              <span className={`text-sm font-medium ${getRiskColor(clause.riskScore)}`}>
+                                {clause.riskScore}/100
+                              </span>
+                            </div>
+                            <p className="text-sm mb-3">{clause.text}</p>
+                            <div className="space-y-2">
+                              <h6 className="text-xs font-medium text-muted-foreground">Explanation</h6>
+                              <p className="text-sm">{clause.explanation}</p>
+                              <h6 className="text-xs font-medium text-muted-foreground mt-2">Suggestions</h6>
+                              <ul className="space-y-1 text-sm">
+                                {clause.suggestions.map((suggestion, i) => (
+                                  <li key={i} className="flex">
+                                    <span className="mr-2">•</span>
+                                    <span>{suggestion}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-                     {penaltyClauses.length > 0 && (
-                       <div className="space-y-2">
-                         <h4 className="font-medium flex items-center">
-                           <AlertTriangle className="mr-2 h-4 w-4 text-destructive" /> Penalty Clauses
-                         </h4>
-                         <div className="space-y-3">
-                           {penaltyClauses.map((clause, index) => (
-                             <div key={index} className="border rounded-lg p-3 bg-destructive/5">
-                               <p className="text-sm mb-2">{clause.text}</p>
-                               <div className="flex justify-between items-center">
-                                 <span className="text-xs font-medium">Risk: {clause.riskScore}/100</span>
-                                 <span className="text-xs text-muted-foreground">Penalty Clause</span>
-                               </div>
-                             </div>
-                           ))}
-                         </div>
-                       </div>
-                     )}
+                    {penaltyClauses.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-medium flex items-center">
+                          <AlertTriangle className="mr-2 h-4 w-4 text-destructive" /> Penalty Clauses
+                        </h4>
+                        <div className="space-y-3">
+                          {penaltyClauses.map((clause, index) => (
+                            <div key={index} className="border rounded-lg p-3 bg-destructive/5">
+                              <p className="text-sm mb-2">{clause.text}</p>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-medium">Risk: {clause.riskScore}/100</span>
+                                <span className="text-xs text-muted-foreground">Penalty Clause</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                     <div className="space-y-2">
-                       <h4 className="font-medium flex items-center">
-                         <FileText className="mr-2 h-4 w-4" /> Suggested Amendments
-                       </h4>
-                       <ul className="space-y-1 text-sm">
-                         {suggestions.map((suggestion, index) => (
-                           <li key={index} className="flex">
-                             <span className="mr-2">•</span>
-                             <span>{suggestion}</span>
-                           </li>
-                         ))}
-                       </ul>
-                     </div>
-                   </div>
-                 )}
+                    <div className="space-y-2">
+                      <h4 className="font-medium flex items-center">
+                        <FileText className="mr-2 h-4 w-4" /> Suggested Amendments
+                      </h4>
+                      <ul className="space-y-1 text-sm">
+                        {suggestions.map((suggestion, index) => (
+                          <li key={index} className="flex">
+                            <span className="mr-2">•</span>
+                            <span>{suggestion}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
 
-                 {activeTab === "plainLanguage" && (
-                   <div className="space-y-4">
-                     <h4 className="font-medium flex items-center">
-                       <Lightbulb className="mr-2 h-4 w-4" /> Plain Language Version
-                     </h4>
-                     <p className="text-sm text-muted-foreground">
-                       This is a simplified version of your contract that maintains the same legal meaning.
-                     </p>
-                     <Textarea
-                       value={plainLanguageText}
-                       readOnly
-                       className="min-h-[300px] font-mono text-sm"
-                     />
-                   </div>
-                 )}
+                {activeTab === "plainLanguage" && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium flex items-center">
+                      <Lightbulb className="mr-2 h-4 w-4" /> Plain Language Version
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      This is a simplified version of your contract that maintains the same legal meaning.
+                    </p>
+                    <Textarea
+                      value={plainLanguageText}
+                      readOnly
+                      className="min-h-[300px] font-mono text-sm"
+                    />
+                  </div>
+                )}
 
-                 {activeTab === "visualization" && (
-                   <div className="space-y-4">
-                     <h4 className="font-medium flex items-center">
-                       <BarChart2 className="mr-2 h-4 w-4" /> Risk Distribution
-                     </h4>
-                     <p className="text-sm text-muted-foreground">
-                       Visual representation of risk across different clause types.
-                     </p>
-                     <div className="h-[300px] w-full">
-                       <ResponsiveContainer width="100%" height="100%">
-                         <BarChart data={riskDistribution} layout="vertical" margin={{ left: 20 }}>
-                           <CartesianGrid strokeDasharray="3 3" />
-                           <XAxis type="number" domain={[0, 100]} />
-                           <YAxis dataKey="type" type="category" width={120} />
-                           <Tooltip
-                             formatter={(value: number) => [`${value}/100`, "Risk Score"]}
-                             labelFormatter={(label: string) => label.charAt(0).toUpperCase() + label.slice(1)}
-                           />
-                           <Bar dataKey="avgRisk" fill="#8884d8" name="Risk Score">
-                             {riskDistribution.map((entry, index) => (
-                               <cell key={`cell-${index}`} fill={getRiskBarColor(entry.avgRisk)} />
-                             ))}
-                           </Bar>
-                         </BarChart>
-                       </ResponsiveContainer>
-                     </div>
-                     <div className="flex justify-center space-x-4 text-xs">
-                       <div className="flex items-center"><div className="w-2 h-2 rounded-full bg-[#10b981] mr-1"></div> Low Risk</div>
-                       <div className="flex items-center"><div className="w-2 h-2 rounded-full bg-[#f59e0b] mr-1"></div> Medium Risk</div>
-                       <div className="flex items-center"><div className="w-2 h-2 rounded-full bg-[#ef4444] mr-1"></div> High Risk</div>
-                     </div>
-                   </div>
-                 )}
-               </CardContent>
-             </Card>
-           )}
+                {activeTab === "visualization" && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium flex items-center">
+                      <BarChart2 className="mr-2 h-4 w-4" /> Risk Distribution
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Visual representation of risk across different clause types.
+                    </p>
+                    <div className="h-[300px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={riskDistribution} layout="vertical" margin={{ left: 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis type="number" domain={[0, 100]} />
+                          <YAxis dataKey="type" type="category" width={120} />
+                          <Tooltip
+                            formatter={(value: any) => [`${value}/100`, "Risk Score"]}
+                            labelFormatter={(label: any) => (typeof label === 'string' ? label.charAt(0).toUpperCase() + label.slice(1) : label)}
+                          />
+                          <Bar dataKey="avgRisk" fill="#8884d8" name="Risk Score">
+                            {riskDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={getRiskBarColor(entry.avgRisk)} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex justify-center space-x-4 text-xs">
+                      <div className="flex items-center"><div className="w-2 h-2 rounded-full bg-[#10b981] mr-1"></div> Low Risk</div>
+                      <div className="flex items-center"><div className="w-2 h-2 rounded-full bg-[#f59e0b] mr-1"></div> Medium Risk</div>
+                      <div className="flex items-center"><div className="w-2 h-2 rounded-full bg-[#ef4444] mr-1"></div> High Risk</div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

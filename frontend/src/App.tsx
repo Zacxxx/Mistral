@@ -9,7 +9,7 @@ import { SiteProof } from "@/features/site/SiteProof"
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute"
 import { AuthLayout } from "@/features/auth/AuthLayout"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/features/auth/AuthProvider"
+import { useAuth, AuthProvider } from "@/features/auth/AuthProvider"
 
 function AppContent() {
   const { signOut } = useAuth();

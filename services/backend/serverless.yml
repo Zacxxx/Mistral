@@ -1,6 +1,9 @@
 service: buildshield-api
 frameworkVersion: '4'
 
+build:
+  esbuild: false
+
 plugins:
   - serverless-esbuild
   - serverless-offline

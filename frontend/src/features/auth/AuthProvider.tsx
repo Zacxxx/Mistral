@@ -1,17 +1,16 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { getCurrentUser, signOut as authSignOut, refreshToken, getAccessToken } from '@/lib/auth';
-import { Hub } from 'aws-amplify';
+import { Hub } from 'aws-amplify/utils';
 import { useRouter } from 'next/navigation';
+import type { AuthUser } from 'aws-amplify/auth';
 
-interface User {
-  username: string;
-  attributes: Record<string, string>;
-}
+// Migrated to AuthUser
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   signOut: () => Promise<void>;
@@ -22,8 +21,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   const checkAuth = async () => {
     try {
@@ -39,11 +39,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     checkAuth();
 
-    const hubListenerCancel = Hub.listen('auth', async (capsule) => {
+    const hubListenerCancel = Hub.listen('auth', async (capsule: any) => {
       const { event } = capsule.payload;
-      if (event === 'signIn' || event === 'autoSignIn' || event === 'tokenRefresh') {
+      if (event === 'signedIn' || event === 'autoSignIn' || event === 'tokenRefresh') {
         await checkAuth();
-      } else if (event === 'signOut') {
+      } else if (event === 'signedOut') {
         setUser(null);
       }
     });
@@ -76,12 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated: !!user, 
-      isLoading, 
-      signOut, 
-      getToken, 
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated: !!user,
+      isLoading,
+      signOut,
+      getToken,
       refreshAuthToken
     }}>
       {children}

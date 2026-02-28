@@ -1,12 +1,21 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Auth } from 'aws-amplify';
-import { CognitoUser } from '@aws-amplify/auth';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
+import {
+  signIn as amplifySignIn,
+  signUp as amplifySignUp,
+  confirmSignUp as amplifyConfirmSignUp,
+  signOut as amplifySignOut,
+  getCurrentUser as amplifyGetCurrentUser,
+  resetPassword as amplifyResetPassword,
+  confirmResetPassword as amplifyConfirmResetPassword
+} from 'aws-amplify/auth';
+import type { AuthUser as AuthUserType } from 'aws-amplify/auth';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
-  user: CognitoUser | null;
+  user: AuthUserType | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -20,7 +29,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<CognitoUser | null>(null);
+  const [user, setUser] = useState<AuthUserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -30,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkAuth = async () => {
     try {
-      const user = await Auth.currentAuthenticatedUser();
+      const user = await amplifyGetCurrentUser();
       setUser(user);
     } catch (error) {
       setUser(null);
@@ -40,39 +49,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const user = await Auth.signIn(email, password);
+    await amplifySignIn({ username: email, password });
+    const user = await amplifyGetCurrentUser();
     setUser(user);
     router.push('/');
   };
 
   const signUp = async (email: string, password: string, name: string) => {
-    await Auth.signUp({
+    await amplifySignUp({
       username: email,
       password,
-      attributes: {
-        email,
-        name,
+      options: {
+        userAttributes: {
+          email,
+          name,
+        },
       },
     });
   };
 
   const confirmSignUp = async (email: string, code: string) => {
-    await Auth.confirmSignUp(email, code);
+    await amplifyConfirmSignUp({ username: email, confirmationCode: code });
     router.push('/login');
   };
 
   const signOut = async () => {
-    await Auth.signOut();
+    await amplifySignOut();
     setUser(null);
     router.push('/login');
   };
 
   const resetPassword = async (email: string) => {
-    await Auth.forgotPassword(email);
+    await amplifyResetPassword({ username: email });
   };
 
   const confirmPassword = async (email: string, code: string, newPassword: string) => {
-    await Auth.forgotPasswordSubmit(email, code, newPassword);
+    await amplifyConfirmResetPassword({ username: email, confirmationCode: code, newPassword });
     router.push('/login');
   };
 
