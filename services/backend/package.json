@@ -1,0 +1,24 @@
+{
+  "name": "@buildshield/backend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "serverless offline --stage local",
+    "deploy:dev": "serverless deploy --stage dev",
+    "remove:dev": "serverless remove --stage dev",
+    "build": "serverless package",
+    "lint": "echo 'lint backend: TODO'",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@buildshield/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.10",
+    "@types/aws-lambda": "8.10.148",
+    "serverless": "4.8.0",
+    "serverless-esbuild": "1.55.1",
+    "serverless-offline": "14.4.0",
+    "typescript": "5.8.2"
+  }
+}
